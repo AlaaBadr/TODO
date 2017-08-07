@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Http\Requests\RegisterRequest;
 use App\User;
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\ApiController;
 use Illuminate\Http\Request;
 //use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
@@ -11,7 +12,7 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 //use JWTAuth;
 
-class RegisterController extends Controller
+class RegisterController extends ApiController
 {
     /*
     |--------------------------------------------------------------------------
@@ -44,24 +45,6 @@ class RegisterController extends Controller
     }
 
     /**
-     * Get a validator for an incoming registration request.
-     *
-     * @param  array  $data
-     * @return \Illuminate\Contracts\Validation\Validator
-     */
-    
-    // protected function validator(array $data)
-    // {
-    //     return Validator::make($data, [
-    //         'name' => 'required|string|max:255',
-    //         'email' => 'required|string|email|max:255|unique:users',
-    //         'password' => 'required|string|min:6|confirmed',
-    //     ]);
-    // }
-
-    
-
-    /**
      * Create a new user instance after a valid registration.
      *
      * @param  array  $data
@@ -77,18 +60,10 @@ class RegisterController extends Controller
         ]);
     }
 
-    public function store()
+    public function store(RegisterRequest $request)
     {
-        //validate
-        $this->validate(request(), [
-            'name' => 'required',
-            'username' => 'required',
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
-
         //create
-        $user = RegisterController::create(request(['name','username','email','password']));
+        RegisterController::create(request(['name','username','email','password']));
 
         //Sign in
         $login = new \App\Http\Controllers\Auth\LoginController;

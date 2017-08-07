@@ -3,8 +3,15 @@
 namespace App\Exceptions;
 
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 class Handler extends ExceptionHandler
 {
@@ -44,6 +51,24 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $exception)
     {
+        if($exception instanceof ValidationException || $exception instanceof UnprocessableEntityHttpException)
+            return response('Sorry, validation failed!', 422);
+
+        if($exception instanceof NotFoundHttpException)
+            return response('Not Found!', 404);
+
+        if($exception instanceof BadRequestHttpException)
+            return response('Invalid Request!', 400);
+
+        if($exception instanceof AuthorizationException)
+            return response('Forbidden!', 403);
+
+        if($exception instanceof MethodNotAllowedHttpException)
+            return response('Method not allowed!', 405);
+
+        if($exception instanceof ModelNotFoundException)
+            return response('Source not found!', 404);
+
         return parent::render($request, $exception);
     }
 

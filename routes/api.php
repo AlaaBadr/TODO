@@ -20,11 +20,7 @@ Route::middleware('guest')->post('/authenticate', [
 	'uses'	=>	'\App\Http\Controllers\Auth\LoginController@authenticate'
 ]);
 
-Route::middleware('guest')->get('/redirectToLogin', function () {
-    return response()->json(['You\'re not authorized, You have to login!'], 401);
-})->name('login');
-
-Route::middleware('guest')->get('/public', [
+Route::middleware('guest')->get('/tasks/public', [
 	'as' => 'get-public-tasks',
 	'uses' => '\App\Http\Controllers\TaskController@allPublicTasks'
 ]);
@@ -81,19 +77,19 @@ Route::group(['prefix' => 'tasks', 'middleware' => 'auth:api'], function (){
 		'as' => 'get-task',
 		'uses' => '\App\Http\Controllers\TaskController@getTask'
 	]);
-	Route::post('/task/private', [
+	Route::post('/task/{task}/private', [
 		'as' => 'mark-private-task',
 		'uses' => '\App\Http\Controllers\TaskController@markPrivate'
 	]);
-	Route::post('/task/completed', [
+	Route::post('/task/{task}/completed', [
 		'as' => 'mark-completed-task',
 		'uses' => '\App\Http\Controllers\TaskController@markCompleted'
 	]);
-	Route::delete('/delete/{name}', [
+	Route::delete('/delete/{task}', [
 		'as' => 'delete-task',
 		'uses' => '\App\Http\Controllers\TaskController@destroy'
 	]);
-	Route::post('/task/toggle', [
+	Route::post('/task/{task}/toggle', [
 		'as'	=>	'toggle-task',
 		'uses'	=>	'\App\Http\Controllers\TaskController@toggleStatus'
 	]);
@@ -108,7 +104,7 @@ Route::group(['prefix' => 'invitations', 'middleware' => 'auth:api'], function (
 		'as' => 'invite',
 		'uses' => '\App\Http\Controllers\InvitationController@invite'
 	]);
-	Route::post('/accpet', [
+	Route::post('/accept', [
 		'as' => 'accept-invitation',
 		'uses' => '\App\Http\Controllers\InvitationController@acceptInvitation'
 	]);

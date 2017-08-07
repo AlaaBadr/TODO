@@ -181,6 +181,9 @@ return [
         //JWT Auth Provider
         Tymon\JWTAuth\Providers\LaravelServiceProvider::class,
 
+        //Api Service Provider
+        \App\Providers\ApiServiceProvider::class,
+
     ],
 
     /*

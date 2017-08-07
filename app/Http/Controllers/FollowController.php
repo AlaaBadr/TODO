@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\NotOwnerRequest;
 use App\Invitation;
 use Illuminate\Http\Request;
 use App\User;
@@ -9,42 +10,41 @@ use App\Task;
 use App\FollowContainer;
 use App\Events\Task_Followed;
 
-class FollowController extends Controller
+class FollowController extends ApiController
 {
-    public function follow(Request $request)
+    public function follow(Request $request, NotOwnerRequest $not)
     {
     	$user = Auth\LoginController::currentUser();
 
-    	$task = TaskController::getTask($request->only('name'));
+    	$task = Task::find($request->only('taskId'));
 
-        $invitation = Invitation::whereRaw("`receiverId` = \"$user->username\" and `taskId` = \"$task->name\"")->get();
+        $invitation = Invitation::whereRaw("`receiverId` = \"$user->id\" and `taskId` = \"$task->id\"")->get();
 
     	if($task->private == 1 && $invitation == null)
         {
             return response()->json(["You're forbidden to follow this task"] ,403);
         }
-    	if($user->id != $task->user_id)
-    	{
-    		$task->followers()->attach($user);
-            $fol = new FollowContainer;
-            $fol->senderId = $user->username;
-            $fol->receiverId = Auth\LoginController::searchId($task->user_id)->username;
-            $fol->taskId = $task->name;
 
-            event(new Task_Followed($fol));
-    		return response()->json(["Task followed successfully!"] ,200);
-    	}
+        $task->followers()->attach($user);
 
-    	return response()->json(["You can't follow your own task!"] ,403);
+        $fol = new FollowContainer;
+        $fol->senderId = $user->username;
+        $fol->receiverId = Auth\LoginController::searchId($task->user_id)->username;
+        $fol->taskId = $task->name;
+
+        event(new Task_Followed($fol));
+
+        return response()->json(["Task followed successfully!"] ,200);
+
     }
 
-    public function unfollow(Request $request)
+    public function unfollow(Request $request, NotOwnerRequest $not)
     {
     	$user = Auth\LoginController::currentUser();
 
-    	$task = TaskController::getTask($request->only('name'));
+    	$task = Task::find($request->only('taskId'));
     	
-    	if($user->id != $task->user_id && in_array($task->toArray(), $user->followedTasks()->get()->toArray()))
+    	if(in_array($task->toArray(), $user->followedTasks()->get()->toArray()))
     	{
     		$task->followers()->detach($user);
     		return response()->json(["Task unfollowed!"] ,200);
@@ -55,7 +55,6 @@ class FollowController extends Controller
 
     public function followedTasks(Request $request)
     {
-		$user = new User;
     	$user = Auth\LoginController::currentUser($request);
 
     	return $user->followedTasks()->get();

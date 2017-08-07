@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\ApiController;
 use Illuminate\Foundation\Auth\ThrottlesLogins;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\User;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Http\Request;
+use App\Transformers\UserTransformer;
 
-class LoginController extends Controller
+class LoginController extends ApiController
 {
     /*
     |--------------------------------------------------------------------------
@@ -32,6 +33,8 @@ class LoginController extends Controller
      */
     protected $redirectTo = '/home';
 
+    protected $userTransformer;
+
     /**
      * Create a new controller instance.
      *
@@ -41,6 +44,8 @@ class LoginController extends Controller
     {
         $this->maxAttempts = 4;
         $this->decayMinutes = 2;
+
+        $this->userTransformer = new UserTransformer();
     }
 
     public function username()
@@ -51,8 +56,7 @@ class LoginController extends Controller
     public function authenticate(Request $request)
     {
         $credentials = $request->only('email', 'password');
-        //$credentials = $request->only('email', 'password');
-        //return $credentials;
+
         try {
             if($this->hasTooManyLoginAttempts($request))
             {
@@ -62,10 +66,10 @@ class LoginController extends Controller
             if(! $token = auth()->guard()->attempt($credentials))
             {
                 $this->incrementLoginAttempts($request);
-                return response()->json(['error' => 'User credentials are not correct!'], 401);
+                return $this->respondUnAuthenticated("User credentials are not correct!");
             }
         } catch(JWTException $ex) {
-            return response()->json(['error' => 'Something went wrong!'], 500);
+            return $this->respondInternalServerError();
         }
 
         return response()->json(compact('token'));
@@ -78,28 +82,31 @@ class LoginController extends Controller
 
     public static function searchId($id)
     {
-        return User::find($id);
+        return User::findOrFail($id);
     }
 
-    public static function searchUsername($username)
+    public function searchUsername($username)
     {
-        return User::where('username',$username)->first();
+        $user = User::where('username',$username)->first();
+        return $this->respond(['data' => $this->userTransformer->transform($user)]);
     }
 
     public function searchName($name)
     {
-        return User::where('name',$name)->first();
+        $user = User::where('name',$name)->first();
+        return $this->respond(['data' => $this->userTransformer->transform($user)]);
     }
 
-    public static function searchEmail($email)
+    public function searchEmail($email)
     {
-        return User::where('email',$email)->first();
+        $user = User::where('email',$email)->first();
+        return $this->respond(['data' => $this->userTransformer->transform($user)]);
     }
 
     public function destroy()
     {
         auth()->guard()->logout();
-        return response()->json(['User logged out!'], 200);
+        return $this->respondSuccess("User logged out!");
     }
 
     public function changePassword(Request $request)
@@ -110,10 +117,10 @@ class LoginController extends Controller
         {
             $user->password = bcrypt($request->get('newpassword'));
             $user->save();
-            return response()->json(['Password Changed Successfully!'], 200);
+            return $this->respondSuccess("Password Changed Successfully!");
         }
-        
-        return response()->json(['error' => 'Old password is not correct!'], 401);
+
+        return $this->respondUnAuthenticated("Old password is not correct!");
     }
 
     public function avatar(Request $request)
@@ -142,7 +149,8 @@ class LoginController extends Controller
     {
         $user = $this->findOrCreateGitHubUser(Socialite::driver('github')->user());
 
-        return JWTAuth::fromUser($user);
+        $token = JWTAuth::fromUser($user);
+        return response()->json(compact('token'));
     }
 
     public function findOrCreateGitHubUser($githubUser)
@@ -158,6 +166,6 @@ class LoginController extends Controller
             'name' => $githubUser->name
         ])->save();
 
-        return $user;
+        return $this->respond(['data' => $this->userTransformer->transform($user)]);
     }
 }

@@ -10,15 +10,6 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 class Integration extends TestCase
 {
     use DatabaseTransactions;
-    /**
-     * A basic test example.
-     *
-     * @return void
-     */
-    public function testExample()
-    {
-        $this->assertTrue(true);
-    }
 
     /** @test */
     public function followTest()
@@ -76,7 +67,7 @@ class Integration extends TestCase
 
         //When
         $this->actingAs($user);
-        $this->post(route('mark-private-task'), ['name' => $task->name])->assertStatus(200);
+        $this->post(route('mark-private-task'), ['id' => $task->id])->assertStatus(200);
 
         //Then
         $this->assertDatabaseHas('tasks', ['name' => $task->name, 'private' => 1]);
@@ -90,7 +81,7 @@ class Integration extends TestCase
 
         //When
         $this->actingAs($user);
-        $this->post(route('upload-avatar'), ['avatar' => \Illuminate\Http\UploadedFile::fake()->image('avatar.jpeg')]);
+        $this->post(route('upload-avatar'), ['avatar' => \Illuminate\Http\UploadedFile::fake()->image('     qavatar.jpeg')]);
 
         //Then
         $this->assertFileExists(storage_path()."\\app\\avatars\\".$user->username.'\avatar.jpeg');
@@ -111,7 +102,7 @@ class Integration extends TestCase
 
         //When
         $this->actingAs($user);
-        $this->post(route('toggle-task'), ['name' => $task->name])->assertStatus(200);
+        $this->post(route('toggle-task'), ['id' => $task->id])->assertStatus(200);
 
         //Then
         $this->assertDatabaseHas('tasks', ['name' => $task->name, 'completed' => !$before]);
@@ -157,6 +148,7 @@ class Integration extends TestCase
         //When
         $this->actingAs($user1);
         $response = $this->get(route('search-username', ['username' => $user2->username]));
+
 
         //Then
         $json = json_decode($response->getContent(), TRUE);
@@ -207,7 +199,7 @@ class Integration extends TestCase
 
         //When
         $this->actingAs($user);
-        $this->delete(route('delete-task', ['name' => $task->name]))->assertStatus(200);
+        $this->delete(route('delete-task', ['id' => $task->id]))->assertStatus(200);
 
         //Then
         $this->assertDatabaseMissing('tasks', ['name' => $task->name]);

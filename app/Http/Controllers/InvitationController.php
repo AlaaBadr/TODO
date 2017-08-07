@@ -2,27 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\NotOwnerRequest;
 use Illuminate\Http\Request;
 use App\Invitation;
 use App\Events\Test_Invitation;
+use App\Task;
 
 
-class InvitationController extends Controller
+class InvitationController extends ApiController
 {
 
-    public function invite(Request $request)
+    public function invite(Request $request, NotOwnerRequest $not)
     {
     	$user = Auth\LoginController::currentUser();
 
     	$inv = new \App\Invitation();
-        $inv->senderId = $user->username;
+        $inv->senderId = $user->id;
         $inv->receiverId = $request->get('receiverId');
         $inv->taskId = $request->get('taskId');
 
-        $task = TaskController::getTask($inv->taskId);
-        if($user->id != $task->user_id || $task->private == 0)
+        $task = Task::find($inv->taskId);
+
+        if($task->private == 0)
         {
-            return response()->json(['You can\'t invite anyone on this task!'], 403);
+            return response()->json(['You can\'t invite anyone on a public task!'], 403);
         }
 
         $inv->save();
@@ -36,8 +39,8 @@ class InvitationController extends Controller
     {
     	if($inv->acceptance == null)
     	{
-    		$user = Auth\LoginController::searchUsername($inv->receiverId);
-        	$task = TaskController::getTask($inv->taskId);
+    		$user = Auth\LoginController::searchId($inv->receiverId);
+        	$task = Task::find($inv->taskId);
         
         	$task->followers()->attach($user);
 
